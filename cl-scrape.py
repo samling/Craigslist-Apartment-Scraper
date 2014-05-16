@@ -91,3 +91,5 @@ with open('results.txt', 'w') as f:
                 url = link.get('href')
                 f.write('<a href="http://santabarbara.craigslist.org/' + url + '">View ad on CL</a>\n')
             f.write("\n")
+
+send_mail("craigslist-scraper", "samlingx@gmail.com", "Craigslist Scrape Results", "", "results.txt")
