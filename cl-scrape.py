@@ -1,10 +1,24 @@
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email.Utils import COMMASPACE, formatdate
+from email import Encoders
+import commands
+import smtplib
+import os
 import sys
 import requests
 import unicodedata
 import time
 import argparse
+
+# Import private untracked credentials; continue anyway if not found, but email won't work
+try:
+    from private import *
+except ImportError:
+    pass
 
 # Take some command line arguments
 parser = argparse.ArgumentParser(description="Search Craigslist apartment listings and get the results emailed to you.")
@@ -35,6 +49,8 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
         msg.attach(part)
 
     smtp = smtplib.SMTP(server)
+    smtp.starttls()
+    smtp.login(outbound_un, outbound_pw)
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.close()
 
@@ -89,7 +105,9 @@ with open('results.txt', 'w') as f:
             f.write(loc+'\n')
             for link in ad.findAll('a', limit=1):
                 url = link.get('href')
-                f.write('<a href="http://santabarbara.craigslist.org/' + url + '">View ad on CL</a>\n')
+                f.write('View ad on CL: http://santabarbara.craigslist.org/' + url +'\n')
             f.write("\n")
 
-send_mail("craigslist-scraper", "samlingx@gmail.com", "Craigslist Scrape Results", "", "results.txt")
+with open("results.txt", "r") as results:
+    data = results.read()
+send_mail(outbound_email, ["samlingx@gmail.com"], "Craigslist Scrape Results", data, [], "smtp.gmail.com:587")
