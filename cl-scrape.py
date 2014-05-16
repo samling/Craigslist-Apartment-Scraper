@@ -87,7 +87,7 @@ with open('results.txt', 'w') as f:
         f.write("Cats are ALLOWED\n")
     else:
         f.write("Cats are NOT (explicitly) ALLOWED\n")
-    f.write("Showing "+str(args.limit)+" result(s)")
+    f.write("Showing up to "+str(args.limit)+" result(s)")
     f.write("\n\n")
 
 
