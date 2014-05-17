@@ -36,7 +36,7 @@ parser.add_argument("-b", "--bedrooms", metavar="B", type=int, nargs="?", defaul
 parser.add_argument("-t", "--type", metavar="T", type=int, nargs="?", default='0', help="Type of housing (integer 1-12; default: 0")
 parser.add_argument("-c", "--cats", metavar="C", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not cats are allowed (Y/N; default: N)")
 parser.add_argument("-d", "--dogs", metavar="D", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not dogs are allowed (Y/N; default: N)")
-parser.add_argument("-p", "--pics", metavar="P", choices=('Y', 'N'), nargs="?", default="0", help="Whether the result has a picture or not (Y/N; default: 0)")
+parser.add_argument("-p", "--pics", metavar="P", choices=('Y', 'N'), nargs="?", default="0", help="Whether the result has a picture or not (Y/N; default: N)")
 parser.add_argument("-l", "--limit", metavar="L", type=int, nargs="?", default="15", help="Number of results to return (integer; default: 15)")
 args = parser.parse_args()
 
