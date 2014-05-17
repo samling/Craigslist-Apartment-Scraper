@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+
 from bs4 import BeautifulSoup
 from cStringIO import StringIO
 from email.MIMEMultipart import MIMEMultipart
