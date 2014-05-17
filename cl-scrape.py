@@ -19,7 +19,7 @@ import time
 import unicodedata
 
 # Set up logging
-logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+logging.basicConfig(filename=os.path.join(os.path.dirname(__file__), 'debug.log'), level=logging.DEBUG)
 
 # Set up some variables
 outbound_email = ''
