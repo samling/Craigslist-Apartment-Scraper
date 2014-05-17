@@ -117,7 +117,10 @@ picDict = {
         }
 
 
-with open('tmp/results', 'w') as f:
+tmp = os.path.join(os.path.dirname(__file__), 'tmp/results')
+res = os.path.join(os.path.dirname(__file__), 'results')
+
+with open(tmp, 'w') as f:
 
     # Get unicode response from Craigslist GET request
     r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
@@ -175,29 +178,29 @@ with open('tmp/results', 'w') as f:
             f.write("\n")
 
 # Check MD5 and see if the temp file contains any new content
-if os.path.isfile('results'):
-    prevmd5 = md5sum('results')
+if os.path.isfile(res):
+    prevmd5 = md5sum(res)
 else:
     prevmd5 = ""
-tmpmd5 = md5sum('tmp/results')
+tmpmd5 = md5sum(tmp)
 
 if tmpmd5 == prevmd5:
     # If the temp file is the same as the old file, don't bother emailing it
     # and get rid of the temp file
-    if os.path.isfile('tmp/results'):
-        os.remove('tmp/results')
+    if os.path.isfile(tmp):
+        os.remove(tmp)
     logging.info(time.strftime("%m%d%y-%H%M%S: No new results"))
     sys.exit()
 else:
     # If the temp file is different than the old file, email it to us,
     # remove the old file and replace it with the temp file
-    if os.path.isfile('results'):
-        os.remove('results')
-    move('tmp/results', 'results')
+    if os.path.isfile(res):
+        os.remove(res)
+    move(tmp, res)
     logging.info(time.strftime("%m%d%y-%H%M%S: Wrote new file to ./results"))
     pass
 
-with open("results", "r") as results:
+with open(res, "r") as results:
     data = results.read()
 
 send_mail(outbound_email, ["samlingx@gmail.com"], "Craigslist Scrape Results "+time.strftime("%m/%d/%y %H:%M:%S"), data, [], "smtp.gmail.com:587")
