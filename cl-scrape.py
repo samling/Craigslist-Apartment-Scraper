@@ -5,14 +5,22 @@ from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
-import commands
-import smtplib
-import os
-import sys
-import requests
-import unicodedata
-import time
+from functools import partial
+from shutil import move
 import argparse
+import commands
+import hashlib
+import os
+import requests
+import smtplib
+import sys
+import time
+import unicodedata
+
+# Set up some variables
+outbound_email = ''
+outbound_un = ''
+outbound_pw = ''
 
 # Import private untracked credentials; continue anyway if not found, but email won't work
 try:
@@ -22,10 +30,14 @@ except ImportError:
 
 # Take some command line arguments
 parser = argparse.ArgumentParser(description="Search Craigslist apartment listings and get the results emailed to you.")
-parser.add_argument("maxprice", metavar="P", type=int, nargs="?", default='10000000', help="The maximum price for apartment listings (default: far too much)")
-parser.add_argument("bedrooms", metavar="B", type=int, nargs="?", default='0', help="Minimum number of bedrooms (default: 0)")
-parser.add_argument("cats", metavar="C", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not cats are allowed (default: N)")
-parser.add_argument("limit", metavar="L", type=int, nargs="?", default="15", help="Number of results to return (default: 15)")
+parser.add_argument("-m", "--minprice", metavar="L", type=int, nargs="?", default='0', help="The minimum price for apartment listings (integer; default: 0)")
+parser.add_argument("-M", "--maxprice", metavar="H", type=int, nargs="?", default='10000000', help="The maximum price for apartment listings (integer; default: far too much)")
+parser.add_argument("-b", "--bedrooms", metavar="B", type=int, nargs="?", default='0', help="Minimum number of bedrooms (integer; default: 0)")
+parser.add_argument("-t", "--type", metavar="T", type=int, nargs="?", default='0', help="Type of housing (integer 1-12; default: 0")
+parser.add_argument("-c", "--cats", metavar="C", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not cats are allowed (Y/N; default: N)")
+parser.add_argument("-d", "--dogs", metavar="D", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not dogs are allowed (Y/N; default: N)")
+parser.add_argument("-p", "--pics", metavar="P", choices=('Y', 'N'), nargs="?", default="0", help="Whether the result has a picture or not (Y/N; default: 0)")
+parser.add_argument("-l", "--limit", metavar="L", type=int, nargs="?", default="15", help="Number of results to return (integer; default: 15)")
 args = parser.parse_args()
 
 # Email results
@@ -54,18 +66,57 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.close()
 
-# Translate Y/N into the correct GET variable
-def yn(arg):
-    ua = str(arg).upper()
-    if ua == 'Y':
-        return "purrr" 
-    else:
-        return ""
+# Compute MD5 hash
+def md5sum(filename):
+    with open(filename, mode='rb') as f:
+        d = hashlib.md5()
+        for buf in iter(partial(f.read, 128), b''):
+            d.update(buf)
+    return d.hexdigest()
 
-with open('results.txt', 'w') as f:
+# Housing type dict
+typeDict = {
+        0: "all types",
+        1: "apartments",
+        2: "condos",
+        3: "cottages/cabins",
+        4: "duplexes",
+        5: "flats",
+        6: "houses",
+        7: "in-laws",
+        8: "lofts",
+        9: "townhouses",
+        10: "manufactured",
+        11: "assisted living",
+        12: "land"
+        }
+
+dogDict = {
+        "y": "wooof",
+        "Y": "wooof",
+        "n": "",
+        "N": ""
+        }
+
+catDict = {
+        "y": "purrr",
+        "Y": "purrr",
+        "n": "",
+        "N": ""
+        }
+
+picDict = {
+        "y": "ON",
+        "Y": "ON",
+        "n": "OFF",
+        "N": "OFF"
+        }
+
+
+with open('tmp/results', 'w') as f:
 
     # Get unicode response from Craigslist GET request
-    r = requests.get("http://santabarbara.craigslist.org/search/apa?maxAsk="+str(args.maxprice)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(yn(args.cats)))
+    r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
 
     # Normalize unicode data and convert to ASCII to avoid weirdness
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
@@ -82,25 +133,36 @@ with open('results.txt', 'w') as f:
     ads = content.findAll('p', 'row', limit=args.limit)
 
     # Write the results out to a file
-    f.write("Searching for rooms up to $"+str(args.maxprice)+" with "+str(args.bedrooms)+"+ bedrooms\n")
-    if(yn(str(args.cats)))=='purrr':
+    f.write("Searching for rooms between $"+str(args.minprice)+" and $"+str(args.maxprice)+" with "+str(args.bedrooms)+"+ bedrooms\n")
+    if(catDict[args.cats])=='purrr':
         f.write("Cats are ALLOWED\n")
     else:
-        f.write("Cats are NOT (explicitly) ALLOWED\n")
-    f.write("Showing up to "+str(args.limit)+" result(s)")
+        f.write("Cats may not be allowed\n")
+    if(dogDict[args.dogs])=='wooof':
+        f.write("Dogs are ALLOWED\n")
+    else:
+        f.write("Dogs may not be allowed\n")
+    f.write("Housing type is set to "+typeDict[args.type]+"\n")
+    f.write("Pictures are "+picDict[args.pics]+"\n")
+    f.write("Showing up to "+str(args.limit)+" result(s)\n")
     f.write("\n\n")
 
 
+    # Loop through each ad and prettify the info
     for ad in ads:
         date = ad.contents[5].span.text
         tagline = ad.contents[5].a.text
         price = ad.contents[7].span.text
-        loc = ad.contents[7].select("small")[0].text
+        # For some reason this errors out if you let it collect all the ads on a page, yet still gets all the data
+        try:
+            loc = ad.contents[7].select("small")[0].text
+        except IndexError:
+            loc = ""
 
         if any(ignored_loc in loc.upper() for ignored_loc in ignored):
             pass
         else:
-            # Print to stdout
+            # Write out to results
             f.write(date+' - '+tagline+' - '+price+'\n')
             f.write(loc+'\n')
             for link in ad.findAll('a', limit=1):
@@ -108,6 +170,29 @@ with open('results.txt', 'w') as f:
                 f.write('View ad on CL: http://santabarbara.craigslist.org/' + url +'\n')
             f.write("\n")
 
-with open("results.txt", "r") as results:
+# Check MD5 and see if the temp file contains any new content
+if os.path.isfile('results'):
+    prevmd5 = md5sum('results')
+else:
+    prevmd5 = ""
+tmpmd5 = md5sum('tmp/results')
+
+if tmpmd5 == prevmd5:
+    # If the temp file is the same as the old file, don't bother emailing it
+    # and get rid of the temp file
+    if os.path.isfile('tmp/results'):
+        os.remove('tmp/results')
+    print "No new listings, quitting..."
+    sys.exit()
+else:
+    # If the temp file is different than the old file, email it to us,
+    # remove the old file and replace it with the temp file
+    if os.path.isfile('results'):
+        os.remove('results')
+    move('tmp/results', 'results')
+    pass
+
+with open("results", "r") as results:
     data = results.read()
-send_mail(outbound_email, ["samlingx@gmail.com"], "Craigslist Scrape Results", data, [], "smtp.gmail.com:587")
+
+send_mail(outbound_email, ["samlingx@gmail.com"], "Craigslist Scrape Results "+time.strftime("%m/%d/%y %H:%M:%S"), data, [], "smtp.gmail.com:587")
