@@ -16,7 +16,9 @@ as well as some additional features, like the ability to include/exclude certain
 from search results.
 
 Dependencies are:
+
 -BeautifulSoup (HTML parsing; http://www.crummy.com/software/BeautifulSoup/)
+
 -Requests module (for cURLing the page source)
 
 In order for the email function to work properly, create a file called private.py with the following
