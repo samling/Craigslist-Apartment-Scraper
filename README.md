@@ -19,7 +19,9 @@ In order for the email function to work properly, create a file called private.p
 schema:
 
 outbound_email = 'yourusername@example.com'
+
 outbound_un = 'yourusername'
+
 outbound_pw = 'password'
 
 The script uses gmail's SMTP server to send emails. To set this up properly, go to:
