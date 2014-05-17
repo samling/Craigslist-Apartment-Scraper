@@ -19,7 +19,7 @@ Dependencies are:
 
 * BeautifulSoup (HTML parsing; http://www.crummy.com/software/BeautifulSoup/)
 
-* Requests module (for cURLing the page source)
+* Requests module (for cURLing the page source; pip install requests)
 
 In order for the email function to work properly, create a file called private.py with the following
 schema:
