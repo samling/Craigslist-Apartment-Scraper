@@ -10,12 +10,16 @@ from shutil import move
 import argparse
 import commands
 import hashlib
+import logging
 import os
 import requests
 import smtplib
 import sys
 import time
 import unicodedata
+
+# Set up logging
+logging.basicConfig(filename='debug.log', level=logging.DEBUG)
 
 # Set up some variables
 outbound_email = ''
@@ -182,7 +186,7 @@ if tmpmd5 == prevmd5:
     # and get rid of the temp file
     if os.path.isfile('tmp/results'):
         os.remove('tmp/results')
-    print "No new listings, quitting..."
+    logging.info(time.strftime("%m%d%y-%H%M%S: No new results"))
     sys.exit()
 else:
     # If the temp file is different than the old file, email it to us,
@@ -190,6 +194,7 @@ else:
     if os.path.isfile('results'):
         os.remove('results')
     move('tmp/results', 'results')
+    logging.info(time.strftime("%m%d%y-%H%M%S: Wrote new file to ./results"))
     pass
 
 with open("results", "r") as results:
