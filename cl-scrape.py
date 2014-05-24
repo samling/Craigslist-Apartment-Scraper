@@ -131,13 +131,14 @@ with open(tmp, 'w') as f:
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
 
     # List of locations to ignore
-    ignored = ["LOMPOC", "SANTA MARIA", "GOLETA", "ISLA VISTA", "CARPINTERIA", "CARLSBAD", "OXNARD", "CLEMENTE", "BUELLTON", "VANDENBERG", "BAKERSFIELD", "LOS ANGELES"]
+    ignored = ["LOMPOC", "SANTA MARIA", "GOLETA", "ISLA VISTA", "CARPINTERIA", "CARLSBAD", "OXNARD", "CLEMENTE", "BUELLTON", "VANDENBERG", "BAKERSFIELD", "LOS ANGELES", "SOLVANG", "SANTA YNEZ", "THE SWEEPS", "SOLVANG-SANTA YNEZ"]
 
     # Today's month/day, i.e. 'May 16'
     date = time.strftime("%B %d")
 
     # Use BeautifulSoup to parse HTML data
     soup = BeautifulSoup(s)
+    ban = soup.find('span', 'daybubbles')
     content = soup.find('div', 'content')
     ads = content.findAll('p', 'row', limit=args.limit)
 
@@ -158,10 +159,23 @@ with open(tmp, 'w') as f:
 
 
     # Loop through each ad and prettify the info
+    # Catch some exceptions since apparently these don't always work/Craigslist changes layout
     for ad in ads:
-        date = ad.contents[5].span.text
-        tagline = ad.contents[5].a.text
-        price = ad.contents[7].span.text
+        try:
+            date = ban.text
+        except AttributeError:
+            date = ""
+
+        try:
+            tagline = ad.contents[5].a.text
+        except AttributeError:
+            tagline = ""
+
+        try:
+            price = ad.contents[7].span.text
+        except AttributeError:
+            price = ""
+
         # For some reason this errors out if you let it collect all the ads on a page, yet still gets all the data
         try:
             loc = ad.contents[7].select("small")[0].text
@@ -205,4 +219,4 @@ else:
 with open(res, "r") as results:
     data = results.read()
 
-send_mail(outbound_email, ["samlingx@gmail.com"], "Craigslist Scrape Results "+time.strftime("%m/%d/%y %H:%M:%S"), data, [], "smtp.gmail.com:587")
+send_mail(outbound_email, ["samlingx@gmail.com", "mattwr81@gmail.com"], "Craigslist Scrape Results "+time.strftime("%m/%d/%y %H:%M:%S"), data, [], "smtp.gmail.com:587")
