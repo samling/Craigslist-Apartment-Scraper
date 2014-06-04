@@ -131,7 +131,7 @@ with open(tmp, 'w') as f:
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
 
     # List of locations to ignore
-    ignored = ["LOMPOC", "SANTA MARIA", "GOLETA", "ISLA VISTA", "CARPINTERIA", "CARLSBAD", "OXNARD", "CLEMENTE", "BUELLTON", "VANDENBERG", "BAKERSFIELD", "LOS ANGELES", "SOLVANG", "SANTA YNEZ", "THE SWEEPS", "SOLVANG-SANTA YNEZ"]
+    ignored = ["LOMPOC", "SANTA MARIA", "GOLETA", "ISLA VISTA", "CARPINTERIA", "CARLSBAD", "OXNARD", "CLEMENTE", "BUELLTON", "VANDENBERG", "BAKERSFIELD", "LOS ANGELES", "SOLVANG", "SANTA YNEZ", "THE SWEEPS", "SOLVANG-SANTA YNEZ", "OJAI", "NIPOMO", "ABREGO RD", "WILLOW SPRINGS", "CAMARILLO", "EAST END"]
 
     # Today's month/day, i.e. 'May 16'
     date = time.strftime("%B %d")
@@ -162,23 +162,23 @@ with open(tmp, 'w') as f:
     # Catch some exceptions since apparently these don't always work/Craigslist changes layout
     for ad in ads:
         try:
-            date = ban.text
+            date = unicodedata.normalize('NFKD', ban.text).encode('ascii', 'ignore')
         except AttributeError:
             date = ""
 
         try:
-            tagline = ad.contents[5].a.text
+            tagline = unicodedata.normalize('NFKD', ad.contents[5].a.text).encode('ascii', 'ignore')
         except AttributeError:
             tagline = ""
 
         try:
-            price = ad.contents[7].span.text
+            price = unicodedata.normalize('NFKD', ad.contents[7].span.text).encode('ascii', 'ignore')
         except AttributeError:
             price = ""
 
         # For some reason this errors out if you let it collect all the ads on a page, yet still gets all the data
         try:
-            loc = ad.contents[7].select("small")[0].text
+            loc = unicodedata.normalize('NFKD', ad.contents[7].select("small")[0].text).encode('ascii', 'ignore')
         except IndexError:
             loc = ""
 
