@@ -30,8 +30,7 @@ schema:
 
 The script uses gmail's SMTP server to send emails. To set this up properly, go to:
 
-Gmail settings -> Accounts and Import -> Other Google Account settings -> "Security" tab
-in the new window that opens up -> App passwords settings
+    Gmail settings -> Accounts and Import -> Other Google Account settings -> "Security" tab in the new window that opens up -> App passwords settings
 
 and create a new application-specific password for this script. Place that in outbound_pw and you're
 set to go!
