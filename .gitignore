@@ -2,3 +2,5 @@ private.py
 private.pyc
 results
 debug.log
+tmp/*
+!tmp/.gitkeep
