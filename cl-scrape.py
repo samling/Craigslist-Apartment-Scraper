@@ -125,7 +125,8 @@ res = os.path.join(os.path.dirname(__file__), 'results')
 with open(tmp, 'w') as f:
 
     # Get unicode response from Craigslist GET request
-    r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
+    # Need to add 1 to maxprice because it seems to be "up to" instead of "up to and including"
+    r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice+1)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
 
     # Normalize unicode data and convert to ASCII to avoid weirdness
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
