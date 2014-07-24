@@ -9,7 +9,6 @@ from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 from functools import partial
 from shutil import move
-import argparse
 import commands
 import ConfigParser
 import hashlib
@@ -34,18 +33,6 @@ try:
     from private import *
 except ImportError:
     pass
-
-# Take some command line arguments
-parser = argparse.ArgumentParser(description="Search Craigslist apartment listings and get the results emailed to you.")
-parser.add_argument("-m", "--minprice", metavar="L", type=int, nargs="?", default='0', help="The minimum price for apartment listings (integer; default: 0)")
-parser.add_argument("-M", "--maxprice", metavar="H", type=int, nargs="?", default='10000000', help="The maximum price for apartment listings (integer; default: far too much)")
-parser.add_argument("-b", "--bedrooms", metavar="B", type=int, nargs="?", default='0', help="Minimum number of bedrooms (integer; default: 0)")
-parser.add_argument("-t", "--type", metavar="T", type=int, nargs="?", default='0', help="Type of housing (integer 1-12; default: 0")
-parser.add_argument("-c", "--cats", metavar="C", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not cats are allowed (Y/N; default: N)")
-parser.add_argument("-d", "--dogs", metavar="D", choices=('Y', 'N'), nargs="?", default='N', help="Whether or not dogs are allowed (Y/N; default: N)")
-parser.add_argument("-p", "--pics", metavar="P", choices=('Y', 'N'), nargs="?", default="0", help="Whether the result has a picture or not (Y/N; default: N)")
-parser.add_argument("-l", "--limit", metavar="L", type=int, nargs="?", default="15", help="Number of results to return (integer; default: 15)")
-args = parser.parse_args()
 
 # Email results
 def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
@@ -80,6 +67,33 @@ def md5sum(filename):
         for buf in iter(partial(f.read, 128), b''):
             d.update(buf)
     return d.hexdigest()
+
+# Parse config file
+def ConfigSectionMap(section):
+    dict1 = {}
+    options = Config.options(section)
+    for option in options:
+        try:
+            dict1[option] = Config.get(section, option)
+            if dict1[option] == -1:
+                DebugPrint("skip: %s" % option)
+        except:
+            print("exception on %s!" % option)
+            dict1[option] = None
+    return dict1
+
+# Retrieving our variables from our config file
+Config = ConfigParser.ConfigParser()
+Config.read("config.cfg")
+
+e_min_price=ConfigSectionMap("SearchParams")['minprice']
+e_max_price=ConfigSectionMap("SearchParams")['maxprice']
+e_bedroom_no=ConfigSectionMap("SearchParams")['bedroomno']
+e_housing_type=ConfigSectionMap("SearchParams")['housingtype']
+e_cats=ConfigSectionMap("SearchParams")['cats']
+e_dogs=ConfigSectionMap("SearchParams")['dogs']
+e_pics=ConfigSectionMap("SearchParams")['pics']
+e_limit=ConfigSectionMap("SearchParams")['limit']
 
 # Housing type dict
 typeDict = {
@@ -123,37 +137,10 @@ picDict = {
 tmp = os.path.join(os.path.dirname(__file__), 'tmp/results')
 res = os.path.join(os.path.dirname(__file__), 'results')
 
-def ConfigSectionMap(section):
-    dict1 = {}
-    options = Config.options(section)
-    for option in options:
-        try:
-            dict1[option] = Config.get(section, option)
-            if dict1[option] == -1:
-                DebugPrint("skip: %s" % option)
-        except:
-            print("exception on %s!" % option)
-            dict1[option] = None
-    return dict1
-
-# Retrieving our variables from our config file
-Config = ConfigParser.ConfigParser()
-Config.read("config.cfg")
-
-e_min_price=ConfigSectionMap("SearchParams")['minprice']
-e_max_price=ConfigSectionMap("SearchParams")['maxprice']
-e_bedroom_no=ConfigSectionMap("SearchParams")['bedroomno']
-e_housing_type=ConfigSectionMap("SearchParams")['housingtype']
-e_cats=ConfigSectionMap("SearchParams")['cats']
-e_dogs=ConfigSectionMap("SearchParams")['dogs']
-e_pics=ConfigSectionMap("SearchParams")['pics']
-e_limit=ConfigSectionMap("SearchParams")['limit']
-
 with open(tmp, 'w') as f:
 
     # Get unicode response from Craigslist GET request
     # Need to add 1 to maxprice because it seems to be "up to" instead of "up to and including"
-    #r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice+1)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
     r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(e_min_price)+"&maxAsk="+str(e_max_price)+"&bedrooms="+str(e_bedroom_no)+"&pets_cat="+str(e_cats)+"&pets_dog="+str(e_dogs)+"&hasPic="+str(e_pics))
 
     # Normalize unicode data and convert to ASCII to avoid weirdness
