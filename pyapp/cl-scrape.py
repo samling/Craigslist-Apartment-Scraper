@@ -11,6 +11,7 @@ from functools import partial
 from shutil import move
 import argparse
 import commands
+import ConfigParser
 import hashlib
 import logging
 import os
@@ -122,11 +123,38 @@ picDict = {
 tmp = os.path.join(os.path.dirname(__file__), 'tmp/results')
 res = os.path.join(os.path.dirname(__file__), 'results')
 
+def ConfigSectionMap(section):
+    dict1 = {}
+    options = Config.options(section)
+    for option in options:
+        try:
+            dict1[option] = Config.get(section, option)
+            if dict1[option] == -1:
+                DebugPrint("skip: %s" % option)
+        except:
+            print("exception on %s!" % option)
+            dict1[option] = None
+    return dict1
+
+# Retrieving our variables from our config file
+Config = ConfigParser.ConfigParser()
+Config.read("config.cfg")
+
+e_min_price=ConfigSectionMap("SearchParams")['minprice']
+e_max_price=ConfigSectionMap("SearchParams")['maxprice']
+e_bedroom_no=ConfigSectionMap("SearchParams")['bedroomno']
+e_housing_type=ConfigSectionMap("SearchParams")['housingtype']
+e_cats=ConfigSectionMap("SearchParams")['cats']
+e_dogs=ConfigSectionMap("SearchParams")['dogs']
+e_pics=ConfigSectionMap("SearchParams")['pics']
+e_limit=ConfigSectionMap("SearchParams")['limit']
+
 with open(tmp, 'w') as f:
 
     # Get unicode response from Craigslist GET request
     # Need to add 1 to maxprice because it seems to be "up to" instead of "up to and including"
-    r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice+1)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
+    #r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(args.minprice)+"&maxAsk="+str(args.maxprice+1)+"&bedrooms="+str(args.bedrooms)+"&pets_cat="+str(catDict[args.cats])+"&pets_dog="+str(dogDict[args.dogs])+"&hasPic="+str(picDict[args.pics]))
+    r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(e_min_price)+"&maxAsk="+str(e_max_price)+"&bedrooms="+str(e_bedroom_no)+"&pets_cat="+str(e_cats)+"&pets_dog="+str(e_dogs)+"&hasPic="+str(e_pics))
 
     # Normalize unicode data and convert to ASCII to avoid weirdness
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
@@ -141,21 +169,21 @@ with open(tmp, 'w') as f:
     soup = BeautifulSoup(s)
     ban = soup.find('span', 'daybubbles')
     content = soup.find('div', 'content')
-    ads = content.findAll('p', 'row', limit=args.limit)
+    ads = content.findAll('p', 'row', limit=int(e_limit))
 
     # Write the results out to a file
-    f.write("Searching for rooms between $"+str(args.minprice)+" and $"+str(args.maxprice)+" with "+str(args.bedrooms)+"+ bedrooms\n")
-    if(catDict[args.cats])=='purrr':
+    f.write("Searching for rooms between $"+str(e_min_price)+" and $"+str(e_max_price)+" with "+str(e_bedroom_no)+"+ bedrooms\n")
+    if(catDict[e_cats])=='purrr':
         f.write("Cats are ALLOWED\n")
     else:
         f.write("Cats may not be allowed\n")
-    if(dogDict[args.dogs])=='wooof':
+    if(dogDict[e_dogs])=='wooof':
         f.write("Dogs are ALLOWED\n")
     else:
         f.write("Dogs may not be allowed\n")
-    f.write("Housing type is set to "+typeDict[args.type]+"\n")
-    f.write("Pictures are "+picDict[args.pics]+"\n")
-    f.write("Showing up to "+str(args.limit)+" result(s)\n")
+    f.write("Housing type is set to "+typeDict[int(e_housing_type)]+"\n")
+    f.write("Pictures are "+picDict[e_pics]+"\n")
+    f.write("Showing up to "+str(e_limit)+" result(s)\n")
     f.write("\n\n")
 
 
@@ -164,30 +192,31 @@ with open(tmp, 'w') as f:
     for ad in ads:
         try:
             date = unicodedata.normalize('NFKD', ban.text).encode('ascii', 'ignore')
-        except AttributeError:
+        except:
             date = ""
 
         try:
-            tagline = unicodedata.normalize('NFKD', ad.contents[5].a.text).encode('ascii', 'ignore')
-        except AttributeError:
-            tagline = ""
+            tagline = unicodedata.normalize('NFKD', ad.contents[3].a.text).encode('ascii', 'ignore')
+        except:
+            tagline = "(Title not available)"
 
         try:
-            price = unicodedata.normalize('NFKD', ad.contents[7].span.text).encode('ascii', 'ignore')
-        except AttributeError:
-            price = ""
+            price = unicodedata.normalize('NFKD', ad.contents[3].find('span', 'price').text).encode('ascii', 'ignore')
+        except:
+            price = "(Price not available)"
 
         # For some reason this errors out if you let it collect all the ads on a page, yet still gets all the data
         try:
-            loc = unicodedata.normalize('NFKD', ad.contents[7].select("small")[0].text).encode('ascii', 'ignore')
-        except IndexError:
-            loc = ""
+            loc = unicodedata.normalize('NFKD', ad.contents[3].find('span', 'pnr').small.text).encode('ascii', 'ignore')
+        except:
+            loc = "(Location not available)"
 
         if any(ignored_loc in loc.upper() for ignored_loc in ignored):
             pass
         else:
             # Write out to results
-            f.write(date+' - '+tagline+' - '+price+'\n')
+            #f.write(date+' - '+tagline+' - '+price+'\n')
+            f.write(tagline+' - '+price+'\n')
             f.write(loc+'\n')
             for link in ad.findAll('a', limit=1):
                 url = link.get('href')
