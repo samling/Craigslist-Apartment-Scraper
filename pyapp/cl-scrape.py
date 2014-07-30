@@ -21,7 +21,7 @@ import time
 import unicodedata
 
 # Set up logging
-logging.basicConfig(filename=os.path.join(os.path.dirname(__file__), 'debug.log'), level=logging.DEBUG)
+logging.basicConfig(filename=os.path.join(os.path.dirname(__file__), 'config/debug.log'), level=logging.DEBUG)
 
 # Set up some variables
 outbound_email = ''
@@ -67,24 +67,6 @@ def md5sum(filename):
         for buf in iter(partial(f.read, 128), b''):
             d.update(buf)
     return d.hexdigest()
-
-# Parse config file
-#def ConfigSectionMap(section):
-#    dict1 = {}
-#    options = Config.options(section)
-#    for option in options:
-#        try:
-#            dict1[option] = Config.get(section, option)
-#            if dict1[option] == -1:
-#                DebugPrint("skip: %s" % option)
-#        except:
-#            print("exception on %s!" % option)
-#            dict1[option] = None
-#    return dict1
-
-# Retrieving our variables from our config file
-#Config = ConfigParser.ConfigParser()
-#Config.read("config.cfg")
 
 e_name=os.environ["NAME"]
 e_search_type=os.environ["SEARCH_TYPE"]
@@ -177,6 +159,8 @@ if e_pics == "":
     pass
 else:
     query += "&hasPic="+str(e_pics)
+
+logging.info("Running search using %s config" % str(e_name))
 
 with open(tmp, 'w') as f:
 
@@ -287,4 +271,4 @@ else:
 with open(res, "r") as results:
     data = results.read()
 
-send_mail(outbound_email, ["samlingx@gmail.com", "mattwr81@gmail.com"], "Craigslist Scrape Results "+time.strftime("%m/%d/%y %H:%M:%S"), data, [], "smtp.gmail.com:587")
+send_mail(outbound_email, ["samlingx@gmail.com"], "Craigslist Scrape Results for "+str(e_name)+" | "+time.strftime("%m/%d/%y %H:%M:%S"), data, [], "smtp.gmail.com:587")
