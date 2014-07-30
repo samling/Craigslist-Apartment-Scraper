@@ -69,31 +69,32 @@ def md5sum(filename):
     return d.hexdigest()
 
 # Parse config file
-def ConfigSectionMap(section):
-    dict1 = {}
-    options = Config.options(section)
-    for option in options:
-        try:
-            dict1[option] = Config.get(section, option)
-            if dict1[option] == -1:
-                DebugPrint("skip: %s" % option)
-        except:
-            print("exception on %s!" % option)
-            dict1[option] = None
-    return dict1
+#def ConfigSectionMap(section):
+#    dict1 = {}
+#    options = Config.options(section)
+#    for option in options:
+#        try:
+#            dict1[option] = Config.get(section, option)
+#            if dict1[option] == -1:
+#                DebugPrint("skip: %s" % option)
+#        except:
+#            print("exception on %s!" % option)
+#            dict1[option] = None
+#    return dict1
 
 # Retrieving our variables from our config file
-Config = ConfigParser.ConfigParser()
-Config.read("config.cfg")
+#Config = ConfigParser.ConfigParser()
+#Config.read("config.cfg")
 
-e_min_price=ConfigSectionMap("SearchParams")['minprice']
-e_max_price=ConfigSectionMap("SearchParams")['maxprice']
-e_bedroom_no=ConfigSectionMap("SearchParams")['bedroomno']
-e_housing_type=ConfigSectionMap("SearchParams")['housingtype']
-e_cats=ConfigSectionMap("SearchParams")['cats']
-e_dogs=ConfigSectionMap("SearchParams")['dogs']
-e_pics=ConfigSectionMap("SearchParams")['pics']
-e_limit=ConfigSectionMap("SearchParams")['limit']
+e_name=os.environ["NAME"]
+e_min_price=os.environ["MIN_PRICE"]
+e_max_price=os.environ["MAX_PRICE"]
+e_bedroom_no=os.environ["BEDROOM_NO"]
+e_housing_type=os.environ["HOUSING_TYPE"]
+e_cats=os.environ["CATS"]
+e_dogs=os.environ["DOGS"]
+e_pics=os.environ["PICS"]
+e_limit=os.environ["LIMIT"]
 
 # Housing type dict
 typeDict = {
@@ -134,8 +135,8 @@ picDict = {
         }
 
 
-tmp = os.path.join(os.path.dirname(__file__), 'tmp/results')
-res = os.path.join(os.path.dirname(__file__), 'results')
+tmp = os.path.join(os.path.dirname(__file__), 'tmp/%s-results' % e_name)
+res = os.path.join(os.path.dirname(__file__), 'config/%s-results' % e_name)
 
 with open(tmp, 'w') as f:
 

@@ -1,1 +1,1 @@
-docker build -t samling/clscrape . && docker run --env-file=docker.env -t samling/clscrape
+sh docker-build.sh && sh docker-run.sh

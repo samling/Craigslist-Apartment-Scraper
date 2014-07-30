@@ -7,10 +7,10 @@ ADD pyapp/ /app
 RUN chown -R root /app
 
 # Install cron, nano, screen for scheduled execution of script via cronjob
-RUN apt-get install -y cron nano screen
+#RUN apt-get install -y cron nano screen
 
 # Set up cron
-RUN crontab /app/cron.conf
+#RUN crontab /app/cron.conf
 
 # To keep cron running, we'll run apache in the foreground so the container doesn't exit
 RUN apt-get install -y apache2
@@ -29,8 +29,8 @@ RUN apt-get install -y python-bs4
 RUN pip install -r /app/requirements.txt
 
 # Use this to simply run the script and exit; set up cronjob on docker host
-#CMD ["/bin/bash", "/app/cl-scrape.sh"]
+CMD ["/bin/bash", "/app/cl-scrape.sh"]
 
 # Use this to set up cronjob inside container
 # Kind of needs to be done this way or it can never check if the results are the same as last time
-CMD ["/bin/bash", "/app/startup.sh"]
+#CMD ["/bin/bash", "/app/startup.sh"]
