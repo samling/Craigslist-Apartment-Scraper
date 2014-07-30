@@ -4,4 +4,5 @@ results
 debug.log
 tmp/*
 !tmp/.gitkeep
-docker.env
+*.env
+!docker.env.template

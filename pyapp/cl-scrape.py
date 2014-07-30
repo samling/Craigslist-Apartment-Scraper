@@ -68,15 +68,26 @@ def md5sum(filename):
             d.update(buf)
     return d.hexdigest()
 
+# Global variables
 e_name=os.environ["NAME"]
 e_search_type=os.environ["SEARCH_TYPE"]
 e_min_price=os.environ["MIN_PRICE"]
 e_max_price=os.environ["MAX_PRICE"]
+
+# Individual room variables
+e_private_room=os.environ["PRIVATE_ROOM"]
+e_private_bath=os.environ["PRIVATE_BATH"]
+
+# Apartment variables
 e_bedroom_no=os.environ["BEDROOM_NO"]
 e_housing_type=os.environ["HOUSING_TYPE"]
+
+# Generic housing variables
 e_cats=os.environ["CATS"]
 e_dogs=os.environ["DOGS"]
 e_pics=os.environ["PICS"]
+
+# Search result limit
 e_limit=os.environ["LIMIT"]
 
 # Search type dict
@@ -139,6 +150,20 @@ if e_max_price == "":
 else:
     query += "&maxAsk="+str(e_max_price)
 
+if e_housing_type == "":
+    pass
+else:
+    query += "&housing_type="+str(e_housing_type)
+
+if e_private_room == "":
+    pass
+else:
+    query += "&private_room="+str(e_private_room)
+
+if e_private_bath == "":
+    pass
+else:
+    query += "&private_bath="+str(e_private_bath)
 
 if e_bedroom_no == "":
     pass
@@ -148,17 +173,17 @@ else:
 if e_cats == "":
     pass
 else:
-    query += "&pets_cat="+str(e_cats)
+    query += "&pets_cat="+catDict[e_cats]
 
 if e_dogs == "":
     pass
 else:
-    query += "&pets_dog="+str(e_dogs)
+    query += "&pets_dog="+dogDict[e_dogs]
 
-if e_pics == "":
-    pass
-else:
-    query += "&hasPic="+str(e_pics)
+#if e_pics == "":
+#    pass
+#else:
+#    query += "&hasPic="+picDict[e_pics]
 
 logging.info("Running search using %s config" % str(e_name))
 
@@ -172,7 +197,8 @@ with open(tmp, 'w') as f:
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
 
     # List of locations to ignore
-    ignored = ["LOMPOC", "SANTA MARIA", "GOLETA", "ISLA VISTA", "CARPINTERIA", "CARLSBAD", "OXNARD", "CLEMENTE", "BUELLTON", "VANDENBERG", "BAKERSFIELD", "LOS ANGELES", "SOLVANG", "SANTA YNEZ", "THE SWEEPS", "SOLVANG-SANTA YNEZ", "OJAI", "NIPOMO", "ABREGO RD", "WILLOW SPRINGS", "CAMARILLO", "EAST END"]
+    # TODO: Make this definable in env file
+    ignored = ["LOMPOC", "SANTA MARIA", "GOLETA", "ISLA VISTA", "CARPINTERIA", "CARLSBAD", "OXNARD", "CLEMENTE", "BUELLTON", "VANDENBERG", "BAKERSFIELD", "LOS ANGELES", "SOLVANG", "SANTA YNEZ", "THE SWEEPS", "SOLVANG-SANTA YNEZ", "OJAI", "NIPOMO", "ABREGO RD", "WILLOW SPRINGS", "CAMARILLO", "EAST END", "SEGOVIA", "EMBARCADERO DEL NORTE", "EMBARCADERO DEL MAR"]
 
     # Today's month/day, i.e. 'May 16'
     date = time.strftime("%B %d")
@@ -199,12 +225,26 @@ with open(tmp, 'w') as f:
     else:
         f.write("Dogs may not be allowed\n")
 
+    if e_private_room == "":
+        pass
+    elif int(e_private_room) == 0:
+        f.write("Looking for a SHARED room\n")
+    else:
+        f.write("Looking for a PRIVATE room\n")
+
+    if e_private_bath == "":
+        pass
+    elif int(e_private_bath) == 0:
+        f.write("Looking for room with SHARED/NO PREFERENCE bathroom\n")
+    else:
+        f.write("Looking for room with PRIVATE bathroom\n")
+
     if e_housing_type == "":
         pass
     else:
         f.write("Housing type is set to "+typeDict[int(e_housing_type)]+"\n")
 
-    f.write("Pictures are "+picDict[e_pics]+"\n")
+    f.write("Pictures are "+str(picDict[e_pics])+"\n")
     f.write("Showing up to "+str(e_limit)+" result(s)\n")
     f.write("\n\n")
 
@@ -242,7 +282,7 @@ with open(tmp, 'w') as f:
             f.write(loc+'\n')
             for link in ad.findAll('a', limit=1):
                 url = link.get('href')
-                f.write('View ad on CL: http://santabarbara.craigslist.org/' + url +'\n')
+                f.write('View ad on CL: http://santabarbara.craigslist.org' + url +'\n')
             f.write("\n")
 
 # Check MD5 and see if the temp file contains any new content
