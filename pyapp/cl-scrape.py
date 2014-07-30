@@ -87,6 +87,7 @@ def md5sum(filename):
 #Config.read("config.cfg")
 
 e_name=os.environ["NAME"]
+e_search_type=os.environ["SEARCH_TYPE"]
 e_min_price=os.environ["MIN_PRICE"]
 e_max_price=os.environ["MAX_PRICE"]
 e_bedroom_no=os.environ["BEDROOM_NO"]
@@ -95,6 +96,12 @@ e_cats=os.environ["CATS"]
 e_dogs=os.environ["DOGS"]
 e_pics=os.environ["PICS"]
 e_limit=os.environ["LIMIT"]
+
+# Search type dict
+searchDict = {
+        "apa": "apartments",
+        "roo": "shared rooms"
+        }
 
 # Housing type dict
 typeDict = {
@@ -138,11 +145,44 @@ picDict = {
 tmp = os.path.join(os.path.dirname(__file__), 'tmp/%s-results' % e_name)
 res = os.path.join(os.path.dirname(__file__), 'config/%s-results' % e_name)
 
+query = "http://santabarbara.craigslist.org/search/"+str(e_search_type)+"?"
+# Set additional search parameters if they're given
+if e_min_price == "":
+    pass
+else:
+    query += "&minAsk="+str(e_min_price)
+
+if e_max_price == "":
+    pass
+else:
+    query += "&maxAsk="+str(e_max_price)
+
+
+if e_bedroom_no == "":
+    pass
+else:
+    query += "&bedrooms="+str(e_bedroom_no)
+
+if e_cats == "":
+    pass
+else:
+    query += "&pets_cat="+str(e_cats)
+
+if e_dogs == "":
+    pass
+else:
+    query += "&pets_dog="+str(e_dogs)
+
+if e_pics == "":
+    pass
+else:
+    query += "&hasPic="+str(e_pics)
+
 with open(tmp, 'w') as f:
 
     # Get unicode response from Craigslist GET request
     # Need to add 1 to maxprice because it seems to be "up to" instead of "up to and including"
-    r = requests.get("http://santabarbara.craigslist.org/search/apa?minAsk="+str(e_min_price)+"&maxAsk="+str(e_max_price)+"&bedrooms="+str(e_bedroom_no)+"&pets_cat="+str(e_cats)+"&pets_dog="+str(e_dogs)+"&hasPic="+str(e_pics))
+    r = requests.get(str(query))
 
     # Normalize unicode data and convert to ASCII to avoid weirdness
     s = unicodedata.normalize('NFKD', r.text).encode('ascii', 'ignore')
@@ -160,16 +200,26 @@ with open(tmp, 'w') as f:
     ads = content.findAll('p', 'row', limit=int(e_limit))
 
     # Write the results out to a file
-    f.write("Searching for rooms between $"+str(e_min_price)+" and $"+str(e_max_price)+" with "+str(e_bedroom_no)+"+ bedrooms\n")
+    if e_bedroom_no == "":
+        f.write("Searching for rooms between $"+str(e_min_price)+" and $"+str(e_max_price)+"\n")
+    else:
+        f.write("Searching for rooms between $"+str(e_min_price)+" and $"+str(e_max_price)+" with "+str(e_bedroom_no)+"+ bedrooms\n")
+
     if(catDict[e_cats])=='purrr':
         f.write("Cats are ALLOWED\n")
     else:
         f.write("Cats may not be allowed\n")
+
     if(dogDict[e_dogs])=='wooof':
         f.write("Dogs are ALLOWED\n")
     else:
         f.write("Dogs may not be allowed\n")
-    f.write("Housing type is set to "+typeDict[int(e_housing_type)]+"\n")
+
+    if e_housing_type == "":
+        pass
+    else:
+        f.write("Housing type is set to "+typeDict[int(e_housing_type)]+"\n")
+
     f.write("Pictures are "+picDict[e_pics]+"\n")
     f.write("Showing up to "+str(e_limit)+" result(s)\n")
     f.write("\n\n")
